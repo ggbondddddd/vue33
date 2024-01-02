@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        // 这里还有一种做法,直接把data的值浅拷贝给a,把a当作函数参数传入,里面接收值换为data,也可实现.就不需要后面把a的值赋给data了,但是仔细想想这种做法
+        function bserver(obj) {
+            // keys方法 将对象里面的属性名转换为数组
+            const arr = Object.keys(obj)   //['name','address']
+            //遍历    item是上面arr传入的一个个属性名
+            arr.forEach((item) => {
+                // 构造函数的this是构造函数的实例对象
+                Object.defineProperty(a, item, {
+                    get() {
+                        // console.log(obj)
+                        // 这里因为k带引号所以没用obj.k
+                        console.log('读取了data的数据')
+                        return obj[item]
+                    },
+                    set(value) {
+                        console.log(`${item}被改了,我要去解析蓄力dom.....`)
+                        obj[item] = value
+                    }
+                })
+            })
+        }
+
+        // 类似于中间件,让这个对象接收data变为的响应式数据,然后赋给data,data也就具有响应式了,并且可以避免死循环
+        let a = {}
+        // 这个函数将data传入,让中间值对象a变为响应式数据(还是那样,如果直接让data自身的属性接收get,set会死循环)
+        let data = {
+            name: '尚硅谷',
+            address: '北京'
+        }
+
+        // 这里我修改了,原本老师写的是构造函数,我改为了普通函数
+        bserver(data)
+
+        // 准备一个vm实例对象 并且里面的._data属性接收传来数据
+        let vm = {}
+        vm._data = data = a
+        console.log(vm)
+        console.log(data)
+    </script>
+</body>
+
+</html>

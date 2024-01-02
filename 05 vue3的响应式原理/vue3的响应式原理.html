@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<div></div>
+<!-- 总结,vue2这里的核心原理就是让你给定的对象或数组或元素具备响应式,但是又不会死循环,就这么简单,但是如果像下面一样直接将中间变量p赋给源数据person
+    还是会出现死循环的情况,最好的办法再本文件夹的2里面用构造函数的方法,直接将中间变量赋给源数据也不会出现死循环
+    但是增加和删除必须依靠别的方法才能实现响应式,不完善的地方 -->
+
+<body>
+    <script>
+        // 源数据   我们想让中间变量被get,set,
+        let person = {
+            name: '张三',
+            age: 18
+        }
+
+        // 模拟vue2中实现响应式
+        // #region
+        // let p = {}
+
+        // // 这里实现了对p对象的name属性的代理
+        // Object.defineProperty(p, 'name', {
+        //     // 有人读取p对象的name时get会调用
+        //     get() {
+        //         console.log('name被读取了')
+        //         return person.name
+        //     },
+        //     // 有人修改name时会调用set
+        //     set(value) {
+        //         console.log('有人修改了name属性，我发现了，我要去更新界面')
+        //         person.name = value
+        //     }
+        // })
+
+        // Object.defineProperty(p, 'age', {
+        //     get() {
+        //         console.log('age被读取了')
+        //         return person.age
+        //     },
+        //     set(value) {
+        //         console.log('有人修改了age属性，我发现了，我要去更新界面')
+        //         // 这里我理解的是当你简单修改p的age或name时并不是响应式的这个数据，但是当你修改了这个属性，set可以检测到你p的name的变化，然后将这个值赋给
+        //         // pe的name，而一旦你读取p的name，set里面又会把pe的name给p的name。
+        //         // 如果此处你直接将p的name赋给p会死循环，因为p一直发生变化，一直把变化的值赋给p，然后死循环
+        //         person.age = value
+        //     }
+        // })
+        // #endregion
+
+
+        // 模拟vue3中实现响应式原理  :通过proxy代理:拦截对象中任意属性的变化,包括:属性值的读写,属性的添加,属性的修改等,然后
+        // 通过Reflect对源对象的属性进行操作
+        // #region
+        // 这里和上面都是修改中间变量p的属性,让源数据person改变
+        // 这里的set和Object.defineProperty方法里面的set不一样,后者只能检测到修改,新增检测不到,而这里的set你新增一个属性也会检测到.
+        // Reflect上面有很多方法如get,set,delete,优势在于,执行成功还是失败都有返回值,并且不会中途由于单线程报错,只会返回一个false,如下用
+        // Object.defineProperty添加两个相同的属性,会直接报错,你都不知道错在那,必须用trycatch,很麻烦,而Reflect.defineProperty不会报错
+        // ,只会告诉你true和false,这里用别的方式也可以,只不过要写很多的trycatch,所以用reflect最优.
+        person = new Proxy(person, {
+            // 有人读取p的某个属性时调用
+            get(target, propName) {
+                console.log(`有人读取了p身上${propName}属性`)
+                // propName是你读取的person的那个属性,[name,age],是动态的,动态的属性只能用中括号
+                // return target[propName]   Reflect.get和普通对象获取属性是一样的,但是修改成功还是失败都有返回值true还是false
+                return Reflect.get(target, propName)
+            },
+            // 有人修改p的某个属性,或者给p追加某个属性时调用
+            set(target, propName, value) {
+                console.log(`有人修改了p身上的${propName}属性,我要去更新页面了`)
+                // target[propName] = value   下面的Reflect.set是修改属性
+                Reflect.set(target, propName, value)
+            },
+            // 有人删除p的某个属性时调用
+            deleteProperty(target, propName) {
+                console.log(`有人删除了p身上的${propName}属性,我要去更新页面了`)
+                // delete 可以删除属性,并且删除成功还有返回值true,这里需要return 回去,告诉删除成功了
+                // return delete target[propName] 
+                return Reflect.delete(target, propName)
+            }
+        })
+        // #endregion
+
+        let obj = { a: 1, b: 2 }
+        // 1.   通过Object.defineProperty去操作
+        // #region
+        // try {
+        //     Object.defineProperty(obj, 'c', {
+        //         get() {
+        //             return 3
+        //         }
+        //     })
+        //     Object.defineProperty(obj, 'c', {
+        //         get() {
+        //             return 4
+        //         }
+        //     })
+        // } catch (error) {
+        //     console.log(error)
+        // }
+        //#endregion
+
+        // 通过Reflect.defineProperty去操作 对比上面的object的只不过不需要用多个trycatch来捕获错误,因为这个Reflect.defineProperty有返回值,
+        // 操作执行成功还是失败会返回true或false,而bject.defineProperty没用返回值,只会直接报错
+        //#region
+        // const x1 = Reflect.defineProperty(obj, 'c', {
+        //     get() {
+        //         return 3
+        //     }
+        // })
+        // const x2 = Reflect.defineProperty(obj, 'c', {
+        //     get() {
+        //         return 4
+        //     }
+        // })
+        // if (x2) {
+        //     console.log('成功了')
+        // } else {
+        //     console.log('失败了')
+        // }
+        //#endregion
+    </script>
+</body>
+
+</html>

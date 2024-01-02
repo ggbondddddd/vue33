@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let data = {
+            name: '尚硅谷',
+            address: '北京'
+        }
+        // 创建一个监视的实例对象 用于监视data中属性的变化，很简单，直接把这个函数赋给data，那么data不就获得响应式了吗
+        data = new Observer(data)
+        console.log(data)
+
+        // 准备一个vm实例对象 并且里面的._data属性接收传来数据
+        // let vm = {}
+        // vm._data = data
+        // console.log(data)
+
+
+        function Observer(obj) {
+            // keys方法 将对象里面的属性名转换为数组
+            const arr = Object.keys(obj)   //['name','address']
+            //遍历    k是上面arr传入的一个个属性名
+            arr.forEach((k) => {
+                // 构造函数的this是构造函数的实例对象
+                Object.defineProperty(this, k, {
+                    get() {
+                        // console.log(obj)
+                        console.log('读取了构造函数的属性')
+                        // 这里因为k带引号所以没用obj.k
+                        return obj[k]
+                    },
+                    set(value) {
+                        console.log(`${k}被改了,我要去解析蓄力dom.....`)
+                        obj[k] = value
+                    }
+                })
+            })
+        }
+    </script>
+</body>
+
+</html>
